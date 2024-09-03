@@ -1,0 +1,6 @@
+[submodule "GenericGameDecisionTree"]
+	path = GenericGameDecisionTree
+	url = https://github.com/amirkas/GenericGameDecisionTree.git
+[submodule "Texas-Holdem-Showdown-Evaluator"]
+	path = Texas-Holdem-Showdown-Evaluator
+	url = https://github.com/amirkas/Texas-Holdem-Showdown-Evaluator.git
