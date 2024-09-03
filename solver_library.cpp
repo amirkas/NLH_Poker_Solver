@@ -88,11 +88,15 @@ void InitSolver(std::string flop, float startPot, float effStack) {
 	pCfrSolver = new CfrTree<A, P, C, Solver>(
 			pSolver, Solver::ChanceNode()
 		);
+	pCfrSolver->ConstructTree();
 }
 
-void RunSolve() {
-	pCfrSolver->ConstructTree();
+void RunBaseCfr() {
 	pCfrSolver->BaseCFR(20);
+}
+
+void RunChanceSamplingCfr() {
+	pCfrSolver->ChanceSamplingCFR(200);
 }
 
 long TreeSize() {

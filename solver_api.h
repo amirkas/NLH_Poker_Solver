@@ -27,7 +27,9 @@ extern "C" NLH_SOLVER_API void AddHandToRange(Player player, std::string holeCar
 
 extern "C" NLH_SOLVER_API void InitSolver(std::string flop, float startPot, float effStack);
 
-extern "C" NLH_SOLVER_API void RunSolve();
+extern "C" NLH_SOLVER_API void RunBaseCfr();
+
+extern "C" NLH_SOLVER_API void RunChanceSamplingCfr();
 
 extern "C" NLH_SOLVER_API long TreeSize();
 
