@@ -29,41 +29,45 @@ float Solver::UtilityFunc(std::vector<HistoryNode> history) {
 	auto reverseEnd = history.rend();
 	int depthFromEnd = 0;
 	for (reverseStart; reverseStart != reverseEnd; reverseStart++) {
-		if (depthFromEnd == 0) {
-			HistoryNode node = *reverseStart;
-			if (node.IsChanceNode()) {
-				ChanceNode chanceNode = node.GetChanceNode();
-				//Players were all in before river. Find board -> winner.
+		
+		HistoryNode node = *reverseStart;
+		if (node.IsChanceNode()) {
+			ChanceNode chanceNode = node.GetChanceNode();
+			//Players were all in before river. Find board -> winner.
 
-				int winner = this->mWinnerTable->GetShowdownWinner(chanceNode.mHoleCardsOOP,
-																   chanceNode.mHoleCardsIP,
-																   chanceNode.mPrevTurnCard,
-																   chanceNode.mPrevRiverCard);
-				int potDiff = chanceNode.mPot - this->mStartingPot / 2;
+			int winner = this->mWinnerTable->GetShowdownWinner(chanceNode.mHoleCardsOOP,
+															   chanceNode.mHoleCardsIP,
+															   chanceNode.mPrevTurnCard,
+															   chanceNode.mPrevRiverCard);
+			
+			float potDiff = (chanceNode.mPot - this->mStartingPot);
+			/*std::cout << "all in " << winner * potDiff << "\n";*/
+			return static_cast<float>(winner) * potDiff;
+		}
+		if (node.IsPlayerNode()) {
+			PokerPlayerNode playerNode = node.GetPlayerNode();
+			Bet lastAction = node.GetAction();
+			if (lastAction.mIsFold) {
+				int mul = playerNode.IsPlayerOne() ? -1 : 1;
+				float potDiff = (playerNode.mPot - playerNode.mAmountToCall - this->mStartingPot);
+				/*std::cout << "fold " << mul * potDiff << "\n";*/
+				return mul * potDiff;
+			}
+			else {
+				std::string turnCard = playerNode.mBoard.substr(0, 2);
+				std::string rivercard = playerNode.mBoard.substr(2, 2);
+				std::string oopCard = playerNode.mHoleCardsOOP;
+				std::string ipCard = playerNode.mHoleCardsIP;
+				
+
+				int winner = this->mWinnerTable->GetShowdownWinner(oopCard, ipCard,
+																   turnCard, rivercard);
+				
+				float potDiff = (playerNode.mPot + playerNode.mAmountToCall - this->mStartingPot);
+				/*std::cout << "river call " << winner * potDiff << "\n";*/
 				return winner * potDiff;
 			}
-			if (node.IsPlayerNode()) {
-				PokerPlayerNode playerNode = node.GetPlayerNode();
-				Bet lastAction = node.GetAction();
-				if (lastAction.mIsFold) {
-					int mul = playerNode.IsPlayerOne() ? -1 : 1;
-					int potDiff = (playerNode.mPot - playerNode.mAmountToCall - this->mStartingPot) / 2;
-					return mul * potDiff;
-				}
-				else {
-					std::string turnCard = playerNode.mBoard.substr(0, 2);
-					std::string rivercard = playerNode.mBoard.substr(2, 2);
-					std::string oopCard = playerNode.mHoleCardsOOP;
-					std::string ipCard = playerNode.mHoleCardsIP;
-					
-
-					int winner = this->mWinnerTable->GetShowdownWinner(oopCard, ipCard,
-																	   turnCard, rivercard);
-
-					int potDiff = (playerNode.mPot + playerNode.mAmountToCall - this->mStartingPot) / 2;
-					return winner * potDiff;
-				}
-			}
+		
 		}
 	}
 }

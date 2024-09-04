@@ -152,8 +152,12 @@ public:
 				float betAmount = mBetAmount * currPot;
 				return currPot + (std::min)(ceilingDiff / 2, betAmount);
 			}
-			else {
+			else if (mIsCall) {
 				return currPot + (mBetAmount * currPot);
+			}
+			else
+			{
+				return currPot;
 			}
 		}
 		std::string ToHash() { return Utils::NO_CARD; }
@@ -310,7 +314,7 @@ public:
 		mRangeIpSize{ 0 }, mMatrix{} {}
 
 	HoleCardMatrix(Solver::Range* rangeOOP, Solver::Range* rangeIP) {
-		int totalSize = rangeOOP->size() * rangeIP->size();
+		int totalSize = (rangeOOP->size() + 1) * (rangeIP->size() + 1);
 		mMatrix = MatrixList(totalSize, nullptr);
 		mRangeIpSize = rangeIP->size();
 		mRangeOOP = rangeOOP;
@@ -319,17 +323,17 @@ public:
 
 	
 	void SetElem(Solver::HoleCards& CardsOOP, Solver::HoleCards& CardsIP, Elem* pElem) {
-		int iOOP = mRangeOOP->HandIndex(CardsOOP);
-		int iIP = mRangeIP->HandIndex(CardsIP);
-		int tableIndex = ( iOOP * mRangeIpSize ) + iIP;
+		int iOOP = CardsOOP.size() != 4? 0 : mRangeOOP->HandIndex(CardsOOP) + 1;
+		int iIP = CardsIP.size() != 4 ? 0 : mRangeIP->HandIndex(CardsIP) + 1;
+		int tableIndex = ( iOOP * (mRangeIpSize + 1) ) + iIP;
 		mMatrix.at(tableIndex) = pElem;
 	}
 
 	
 	auto* GetElem(Solver::HoleCards& CardsOOP, Solver::HoleCards& CardsIP) {
-		int iOOP = mRangeOOP->HandIndex(CardsOOP);
-		int iIP = mRangeIP->HandIndex(CardsIP);
-		int tableIndex = ( iOOP * mRangeIpSize ) + iIP;
+		int iOOP = CardsOOP.size() != 4 ? 0 : mRangeOOP->HandIndex(CardsOOP) + 1;
+		int iIP = CardsIP.size() != 4 ? 0 : mRangeIP->HandIndex(CardsIP) + 1;
+		int tableIndex = ( iOOP * (mRangeIpSize  + 1)) + iIP;
 		return mMatrix.at(tableIndex);
 	}
 };

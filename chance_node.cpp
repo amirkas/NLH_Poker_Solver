@@ -9,7 +9,7 @@ Solver::Board* Solver::ChanceNode::GetDrawCards(Solver* staticGameInfo) {
 }
 
 float Solver::ChanceNode::DrawUniformProb(Board* drawCards) {
-	return 1.0 / (float) drawCards->size();
+	return 2.0 / (float) drawCards->size();
 }
 
 typedef ClientNode<Solver::Bet, Solver::PokerPlayerNode, Solver::ChanceNode> ChanceNodeChild; 
@@ -104,26 +104,27 @@ static void HandleRiverDraw(ChanceNodeChildList& list, ChanceNode& p, Solver* g)
 
 ChanceNodeChildList Solver::ChanceNode::Children(Solver* staticInfo) {
 
+	
 	ChanceNodeChildList allChildren;
-	if (this->mHoleCardsOOP.size() == 0) {
+	if (this->mHoleCardsOOP.empty()) {
 		HandleDealingHandOOP(allChildren, *this, staticInfo);
 	}
-	else if (this->mHoleCardsIP.size() == 0) {
+	else if (this->mHoleCardsIP.empty()) {
 		HandleDealingHandIP(allChildren, *this, staticInfo);
 	}
-	else if (this->IsAllIn() && this->mPrevTurnCard.size() == 0) {
+	else if (this->IsAllIn() && this->mPrevTurnCard.empty()) {
 		HandleFlopAllIn(allChildren, *this, staticInfo);
 	}
-	else if (this->IsAllIn() && this->mPrevTurnCard.size() == 2) {
+	else if (this->IsAllIn() && (this->mPrevTurnCard.size() == 2 && !this->mPrevRiverCard.size() == 2)) {
 		HandleTurnAllIn(allChildren, *this, staticInfo);
 	}
-	else if (this->IsAllIn() && this->mPrevTurnCard.size() == 4) {
+	else if (this->IsAllIn() && this->mPrevTurnCard.size() == 2 && this->mPrevRiverCard.size() == 2) {
 		HandleRiverAllIn(allChildren, *this, staticInfo);
 	}
-	else if (this->mPrevTurnCard.size() == 0) {
+	else if (this->mPrevTurnCard.empty()) {
 		HandleTurnDraw(allChildren, *this, staticInfo);
 	}
-	else {
+	else if (this->mPrevTurnCard.size() == 2) {
 		HandleRiverDraw(allChildren, *this, staticInfo);
 	}
 	return allChildren;

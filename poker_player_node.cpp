@@ -87,7 +87,7 @@ static PlayerNodeChild HandleFlopOrTurnCall(PlayerNode& p, Bet& b, Solver* g) {
 	bool isAllIn = ( newPot >= g->mEffectiveStack );
 	
 	Solver::ChanceNode nextStreetNode(p.mBoard, Utils::NO_CARD, p.mHoleCardsOOP,
-									  p.mHoleCardsOOP, p.mPot, isAllIn);
+									  p.mHoleCardsIP, p.mPot, isAllIn);
 	return PlayerNodeChild(nextStreetNode, b);
 }
 

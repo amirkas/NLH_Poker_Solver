@@ -48,7 +48,7 @@ void AddBetToStrategy(Player player, Street street, int betDepth, std::string be
 	
 	if (player == OOP) {
 		if (!hasCallIP.at(betDepth)) {
-			clientStratIP->AddToStrategy((Solver::Street) street, betDepth + 1, check);
+			clientStratIP->AddToStrategy((Solver::Street) street, betDepth + 1, call);
 			hasCallIP.at(betDepth) = true;
 		}
 		Solver::Bet newBet(bet);
@@ -56,7 +56,7 @@ void AddBetToStrategy(Player player, Street street, int betDepth, std::string be
 	}
 	else {
 		if (!hasCallOOP.at(betDepth)) {
-			clientStratOOP->AddToStrategy((Solver::Street) street, betDepth + 1, check);
+			clientStratOOP->AddToStrategy((Solver::Street) street, betDepth + 1, call);
 			hasCallOOP.at(betDepth) = true;
 		}
 		Solver::Bet newBet(bet);
@@ -91,12 +91,20 @@ void InitSolver(std::string flop, float startPot, float effStack) {
 	pCfrSolver->ConstructTree();
 }
 
-void RunBaseCfr() {
-	pCfrSolver->BaseCFR(20);
+void RunBaseCfr(int numIterations) {
+	pCfrSolver->BaseCFR(numIterations);
 }
 
-void RunChanceSamplingCfr() {
-	pCfrSolver->ChanceSamplingCFR(200);
+void RunBaseCfrWithAccuracy(float accuracy) {
+	pCfrSolver->BaseCFRwithAccuracy(accuracy);
+}
+
+void RunChanceSamplingCfr(int numIterations) {
+	pCfrSolver->ChanceSamplingCFR(numIterations);
+}
+
+void RunMCCFRAccuracy(float accuracy) {
+	pCfrSolver->ChanceSamplingCFRwithAccuracy(accuracy);
 }
 
 long TreeSize() {
