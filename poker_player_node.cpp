@@ -2,7 +2,7 @@
 #include "Solver.h"
 #include "nodes.h"
 
-Solver::Street Solver::PokerPlayerNode::CurrentStreet() {
+Solver::Street Solver::PokerPlayerNode::CurrentStreet() const {
 	if (this->mBoard.size() == 0) {
 		return FLOP;
 	}
@@ -14,7 +14,7 @@ Solver::Street Solver::PokerPlayerNode::CurrentStreet() {
 	}
 }
 
-std::vector<Solver::Bet> Solver::PokerPlayerNode::ActionList(Solver* gameInfo) {
+std::vector<Solver::Bet> Solver::PokerPlayerNode::ActionList(Solver* gameInfo) const {
 
 	int depth = this->mBetDepth;
 	Street currStreet = this->CurrentStreet();
@@ -36,12 +36,14 @@ typedef ClientNode<Solver::Bet, Solver::PokerPlayerNode, Solver::ChanceNode> Pla
 typedef Solver::PokerPlayerNode PlayerNode;
 typedef Solver::Bet Bet;
 
+
 /**
  * @brief Gets child for a fold, which is a terminal node. 
  * @return ClientNode<Bet, PokerPlayerNode, ChanceNode>(Terminal Node)
 		   used by the generic cfr lib.
  */
-static PlayerNodeChild HandleFold(PlayerNode& p, Bet& b, Solver* g) {
+ClientNode<Solver::Bet, Solver::PokerPlayerNode, Solver::ChanceNode>
+Solver::PokerPlayerNode::HandleFold(const PlayerNode& p, const Bet& b, Solver* g) {
 	return PlayerNodeChild(b);
 }
 
@@ -50,7 +52,8 @@ static PlayerNodeChild HandleFold(PlayerNode& p, Bet& b, Solver* g) {
  * @return ClientNode<Bet, PokerPlayerNode, ChanceNode>(Terminal Node)
 		   used by the generic cfr lib.
  */
-static PlayerNodeChild HandleOopCheck(PlayerNode& p, Bet& b, Solver* g) {
+ClientNode<Solver::Bet, Solver::PokerPlayerNode, Solver::ChanceNode>
+Solver::PokerPlayerNode::HandleOopCheck(const PlayerNode& p,const Bet& b, Solver* g) {
 	PlayerNode newPlayerNode(p);
 	newPlayerNode.SwitchPlayer();
 	return PlayerNodeChild(newPlayerNode, b);
@@ -61,11 +64,15 @@ static PlayerNodeChild HandleOopCheck(PlayerNode& p, Bet& b, Solver* g) {
  * @return ClientNode<Bet, PokerPlayerNode, ChanceNode>(Terminal Node)
 		   used by the generic cfr lib.
  */
-static PlayerNodeChild HandleIpCheck(PlayerNode& p, Bet& b, Solver* g) {
+ClientNode<Solver::Bet, Solver::PokerPlayerNode, Solver::ChanceNode>
+Solver::PokerPlayerNode::HandleIpCheck(const PlayerNode& p, const Bet& b, Solver* g) {
 	Solver::Street currStreet = p.CurrentStreet();
+	std::string board = p.mBoard;
+	std::string hole_cards_oop = p.mHoleCardsOOP;
+	std::string hole_cards_ip = p.mHoleCardsIP;
 	if (currStreet == Solver::FLOP || currStreet == Solver::TURN ) {
-		Solver::ChanceNode nextStreetNode(p.mBoard, Utils::NO_CARD,
-									p.mHoleCardsOOP, p.mHoleCardsIP, p.mPot);
+		Solver::ChanceNode nextStreetNode(board, Utils::NO_CARD,
+										  hole_cards_oop, hole_cards_ip, p.mPot);
 		return PlayerNodeChild(nextStreetNode, b);
 	}
 	else {
@@ -80,14 +87,19 @@ static PlayerNodeChild HandleIpCheck(PlayerNode& p, Bet& b, Solver* g) {
  * @return ClientNode<Bet, PokerPlayerNode, ChanceNode>(Chance Node)
 		   used by the generic cfr lib.
  */
-static PlayerNodeChild HandleFlopOrTurnCall(PlayerNode& p, Bet& b, Solver* g) {
+ClientNode<Solver::Bet, Solver::PokerPlayerNode, Solver::ChanceNode>
+Solver::PokerPlayerNode::HandleFlopOrTurnCall(const PlayerNode& p, const Bet& b, Solver* g) {
 	int newPot = p.mPot + p.mAmountToCall;
 	Solver::Street currStreet = p.CurrentStreet();
 
 	bool isAllIn = ( newPot >= g->mEffectiveStack );
-	
-	Solver::ChanceNode nextStreetNode(p.mBoard, Utils::NO_CARD, p.mHoleCardsOOP,
-									  p.mHoleCardsIP, p.mPot, isAllIn);
+
+	std::string board = p.mBoard;
+	std::string hole_cards_oop = p.mHoleCardsOOP;
+	std::string hole_cards_ip = p.mHoleCardsIP;
+
+	Solver::ChanceNode nextStreetNode(board, Utils::NO_CARD, hole_cards_oop,
+									  hole_cards_ip, p.mPot, isAllIn);
 	return PlayerNodeChild(nextStreetNode, b);
 }
 
@@ -96,7 +108,8 @@ static PlayerNodeChild HandleFlopOrTurnCall(PlayerNode& p, Bet& b, Solver* g) {
  * @return ClientNode<Bet, PokerPlayerNode, ChanceNode>(Terminal Node)
 		   used by the generic cfr lib.
  */
-static PlayerNodeChild HandleRiverCall(PlayerNode& p, Bet& b, Solver* g) {
+ClientNode<Solver::Bet, Solver::PokerPlayerNode, Solver::ChanceNode>
+Solver::PokerPlayerNode::HandleRiverCall(const PlayerNode& p, const Bet& b, Solver* g) {
 	return PlayerNodeChild(b);
 }
 
@@ -105,7 +118,8 @@ static PlayerNodeChild HandleRiverCall(PlayerNode& p, Bet& b, Solver* g) {
  * @return ClientNode<Bet, PokerPlayerNode, ChanceNode>(Poker Player node)
 		   used by the generic cfr lib.
  */
-static PlayerNodeChild HandleBet(PlayerNode& p, Bet& b, Solver* g) {
+ClientNode<Solver::Bet, Solver::PokerPlayerNode, Solver::ChanceNode>
+Solver::PokerPlayerNode::HandleBet(const PlayerNode& p, const Bet& b, Solver* g) {
 	float newPot = b.NextPot(p.mPot, g->mEffectiveStack);
 	PlayerNode opponentNode(p);
 	opponentNode.SwitchPlayer();
@@ -122,25 +136,26 @@ static PlayerNodeChild HandleBet(PlayerNode& p, Bet& b, Solver* g) {
  * @param gameInfo Pointer to static game information.
  * @return ClientNode<Bet, PokerPlayerNode, ChanceNode> used by the generic cfr lib.
  */
-PlayerNodeChild Solver::PokerPlayerNode::Child(Bet b, Solver* gameInfo) {
+PlayerNodeChild Solver::PokerPlayerNode::Child(Bet b, Solver* gameInfo) const {
 
 	Street currentStreet = this->CurrentStreet();
 	if (b.IsFold()) {
-		return HandleFold(*this, b, gameInfo);
+		return PokerPlayerNode::HandleFold(*this, b, gameInfo);
 	}
 	else if (b.IsCheck() && this->IsPlayerOne()) {
-		return HandleOopCheck(*this, b, gameInfo);
+		return PokerPlayerNode::HandleOopCheck(*this, b, gameInfo);
 	}
 	else if (b.IsCheck() && !this->IsPlayerOne()) {
-		return HandleIpCheck(*this, b, gameInfo);
+		return PokerPlayerNode::HandleIpCheck(*this, b, gameInfo);
 	}
 	else if (b.IsCall() && ( currentStreet == FLOP || currentStreet == TURN )) {
-		return HandleFlopOrTurnCall(*this, b, gameInfo);
+		return PokerPlayerNode::HandleFlopOrTurnCall(*this, b, gameInfo);
 	}
 	else if (b.IsCall() && ( currentStreet == RIVER )) {
-		return HandleRiverCall(*this, b, gameInfo);
+		return PokerPlayerNode::HandleRiverCall(*this, b, gameInfo);
 	}
 	else if (b.IsBet()) {
-		return HandleBet(*this, b, gameInfo);
+		return PokerPlayerNode::HandleBet(*this, b, gameInfo);
 	}
+	return Bet();
 }

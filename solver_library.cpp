@@ -92,19 +92,19 @@ void InitSolver(std::string flop, float startPot, float effStack) {
 }
 
 void RunBaseCfr(int numIterations) {
-	pCfrSolver->BaseCFR(numIterations);
+	pCfrSolver->CFR(numIterations);
 }
 
 void RunBaseCfrWithAccuracy(float accuracy) {
-	pCfrSolver->BaseCFRwithAccuracy(accuracy);
+	pCfrSolver->CFR_ToAccuracy(accuracy);
 }
 
 void RunChanceSamplingCfr(int numIterations) {
-	pCfrSolver->ChanceSamplingCFR(numIterations);
+	pCfrSolver->MCCFR(numIterations);
 }
 
 void RunMCCFRAccuracy(float accuracy) {
-	pCfrSolver->ChanceSamplingCFRwithAccuracy(accuracy);
+	pCfrSolver->MCCFR_ToAccuracy(accuracy);
 }
 
 long TreeSize() {

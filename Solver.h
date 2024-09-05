@@ -143,7 +143,7 @@ public:
 		bool IsCall() { return mIsCall; }
 		bool IsBet() { return mIsBet; }
 
-		float NextPot(float currPot, float potLimit) {
+		float NextPot(float currPot, float potLimit) const {
 			if (mIsCheck || mIsFold) {
 				return currPot;
 			}
@@ -160,7 +160,7 @@ public:
 				return currPot;
 			}
 		}
-		std::string ToHash() { return Utils::NO_CARD; }
+		std::string ToHash() const { return Utils::NO_CARD; }
 	};
 
 	class PokerPlayerNode {
@@ -208,20 +208,26 @@ public:
 			mBetDepth = betDepth;
 		}
 		
-		Street CurrentStreet();
+		Street CurrentStreet() const;
 		void SwitchPlayer();
 		void SetCallAmount(float amountToCall) { this->mAmountToCall = amountToCall;}
 		void AddToPot(float extraPotAmount) { this->mPot += extraPotAmount; }
 		void ElevateDepth() { this->mBetDepth++; }
 
-		std::string ToHash() { return std::to_string(mPot) + mBoard + mHoleCardsIP + mHoleCardsOOP; }
-		std::string ToInfoSetHash() {
+		std::string ToHash() const { return std::to_string(mPot) + mBoard + mHoleCardsIP + mHoleCardsOOP; }
+		std::string ToInfoSetHash() const {
 			std::string base = std::to_string(mPot) + mBoard;
 			return mPlayer == OOP ? base + mHoleCardsOOP : base + mHoleCardsIP;
 		}
-		bool IsPlayerOne() { return mPlayer == OOP; }
-		std::vector<Bet> ActionList(Solver* staticInfo);
-		ClientNode<Bet, PokerPlayerNode, ChanceNode> Child(Bet b, Solver* staticInfo);
+		bool IsPlayerOne() const { return mPlayer == OOP; }
+		std::vector<Bet> ActionList(Solver* staticInfo) const;
+		static ClientNode<Bet, PokerPlayerNode, ChanceNode> HandleFold(const PokerPlayerNode& p, const Bet& bet, Solver* g);
+		static ClientNode<Bet, PokerPlayerNode, ChanceNode> HandleOopCheck(const PokerPlayerNode& p, const Bet& bet, Solver* g);
+		static ClientNode<Bet, PokerPlayerNode, ChanceNode> HandleIpCheck(const PokerPlayerNode& p, const Bet& bet, Solver* g);
+		static ClientNode<Bet, PokerPlayerNode, ChanceNode> HandleFlopOrTurnCall(const PokerPlayerNode& p, const Bet& bet, Solver* g);
+		static ClientNode<Bet, PokerPlayerNode, ChanceNode> HandleRiverCall(const PokerPlayerNode& p, const Bet& bet, Solver* g);
+		static ClientNode<Bet, PokerPlayerNode, ChanceNode> HandleBet(const PokerPlayerNode& p, const Bet& bet, Solver* g);
+		ClientNode<Bet, PokerPlayerNode, ChanceNode> Child(Bet b, Solver* staticInfo) const;
 
 	};
 
@@ -280,15 +286,24 @@ public:
 		static float DrawUniformProb(Board* drawCards);
 		bool IsAllIn() const { return mIsAllIn; }
 
-		std::string ToHash() { return Utils::NO_CARD; }
-		std::vector<ClientNode<Bet, PokerPlayerNode, ChanceNode>> Children(Solver* staticInfo);
+		std::string ToHash() const { return Utils::NO_CARD; }
+
+		static void HandleDealingHandOOP(std::vector<ClientNode<Bet, PokerPlayerNode, ChanceNode>>& list, const ChanceNode& p, Solver* g);
+		static void HandleDealingHandIP(std::vector<ClientNode<Bet, PokerPlayerNode, ChanceNode>>& list, const ChanceNode& p, Solver* g);
+		static void HandleFlopAllIn(std::vector<ClientNode<Bet, PokerPlayerNode, ChanceNode>>& list, const ChanceNode& p, Solver* g);
+		static void HandleTurnAllIn(std::vector<ClientNode<Bet, PokerPlayerNode, ChanceNode>>& list, const ChanceNode& p, Solver* g);
+		static void HandleRiverAllIn(std::vector<ClientNode<Bet, PokerPlayerNode, ChanceNode>>& list, const ChanceNode& p, Solver* g);
+		static void HandleTurnDraw(std::vector<ClientNode<Bet, PokerPlayerNode, ChanceNode>>& vector, const ChanceNode& chance_node, Solver* solver);
+		static void HandleRiverDraw(std::vector<ClientNode<Bet, PokerPlayerNode, ChanceNode>>& list, const ChanceNode& p, Solver* g);
+
+		std::vector<ClientNode<Bet, PokerPlayerNode, ChanceNode>> Children(Solver* staticInfo) const;
 		
 
 	};
 
 	typedef TreeNode<Bet, PokerPlayerNode, ChanceNode> HistoryNode;
 
-	float UtilityFunc(std::vector<HistoryNode> history);
+	float UtilityFunc(std::vector<HistoryNode> const history);
 
 	
 

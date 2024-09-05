@@ -9,7 +9,7 @@ Solver::Board* Solver::ChanceNode::GetDrawCards(Solver* staticGameInfo) {
 }
 
 float Solver::ChanceNode::DrawUniformProb(Board* drawCards) {
-	return 2.0 / (float) drawCards->size();
+	return 2.0f / static_cast<float>(drawCards->size());
 }
 
 typedef ClientNode<Solver::Bet, Solver::PokerPlayerNode, Solver::ChanceNode> ChanceNodeChild; 
@@ -17,14 +17,11 @@ typedef std::vector<ChanceNodeChild> ChanceNodeChildList;
 typedef Solver::ChanceNode ChanceNode;
 typedef Solver::PokerPlayerNode PlayerNode;
 
-static void HandleGameStart(ChanceNodeChildList& list, ChanceNode& p, Solver* g) {
 
-}
-
-static void HandleDealingHandOOP(ChanceNodeChildList& list, ChanceNode& p, Solver* g) {
+void Solver::ChanceNode::HandleDealingHandOOP(ChanceNodeChildList& list, const ChanceNode& p, Solver* g)  {
 	
 	Solver::Range* oopRange = g->GetPlayerRange(Solver::OOP);
-	float uniformProb = 1.0 / (float) oopRange->size();
+	float uniformProb = 1.0f / static_cast<float>(oopRange->size());
 	auto iRange = oopRange->begin();
 	auto iEnd = oopRange->end();
 	for (iRange; iRange < iEnd; iRange++) {
@@ -34,25 +31,30 @@ static void HandleDealingHandOOP(ChanceNodeChildList& list, ChanceNode& p, Solve
 	}
 }
 
-static void HandleDealingHandIP(ChanceNodeChildList& list, ChanceNode& p, Solver* g) {
+void Solver::ChanceNode::HandleDealingHandIP(ChanceNodeChildList& list, const ChanceNode& p, Solver* g)  {
 	Solver::Range* ipRange = g->GetPlayerRange(Solver::IP);
-	float uniformProb = 1.0 / (float) ipRange->size();
+	float uniformProb = 1.0f / static_cast<float>(ipRange->size());
 	auto iRange = ipRange->begin();
 	auto iEnd = ipRange->end();
 	for (iRange; iRange < iEnd; iRange++) {
 		Solver::HoleCards ipCards = *iRange;
+		std::string hole_cards_oop = p.mHoleCardsOOP;
+		
 		PlayerNode dealtIp(
 			Solver::OOP, g->mStartingPot, 0.0, Utils::NO_CARD, 
-			p.mHoleCardsOOP, ipCards, (uint8_t) 0
+			hole_cards_oop, ipCards, (uint8_t) 0
 		);
 		list.push_back(ChanceNodeChild(dealtIp, uniformProb));
 	}
 }
 
-static void HandleFlopAllIn(ChanceNodeChildList& list, ChanceNode& p, Solver* g) {
 
-	Solver::Board* turnCards = g->GetDrawCards(p.mHoleCardsOOP, p.mHoleCardsIP, Utils::NO_CARD);
-	float uniformProb = p.DrawUniformProb(turnCards);
+void Solver::ChanceNode::HandleFlopAllIn(ChanceNodeChildList& list, const ChanceNode& p, Solver* g)
+{
+	std::string hole_cards_oop = p.mHoleCardsOOP;
+	std::string hole_cards_ip = p.mHoleCardsIP;
+	Solver::Board* turnCards = g->GetDrawCards(hole_cards_oop, hole_cards_ip, Utils::NO_CARD);
+	float uniformProb = ChanceNode::DrawUniformProb(turnCards);
 	for (int iCard = 0; iCard < turnCards->size(); iCard += 2) {
 		std::string turnCard = turnCards->substr(iCard, 2);
 		ChanceNode turnChanceNode(p, turnCard);
@@ -60,10 +62,12 @@ static void HandleFlopAllIn(ChanceNodeChildList& list, ChanceNode& p, Solver* g)
 	}
 }
 
-static void HandleTurnAllIn(ChanceNodeChildList& list, ChanceNode& p, Solver* g) {
-
-	Solver::Board* riverCards = g->GetDrawCards(p.mHoleCardsOOP, p.mHoleCardsIP, p.mPrevTurnCard);
-	float uniformProb = p.DrawUniformProb(riverCards);
+void Solver::ChanceNode::HandleTurnAllIn(ChanceNodeChildList& list, const ChanceNode& p, Solver* g)  {
+	std::string hole_cards_oop = p.mHoleCardsOOP;
+	std::string hole_cards_ip = p.mHoleCardsIP;
+	std::string prev_turn_card = p.mPrevTurnCard;
+	Solver::Board* riverCards = g->GetDrawCards(hole_cards_oop, hole_cards_ip, prev_turn_card);
+	float uniformProb = ChanceNode::DrawUniformProb(riverCards);
 	for (int iCard = 0; iCard < riverCards->size(); iCard += 2) {
 		std::string riverCard = riverCards->substr(iCard, 2);
 		ChanceNode riverChanceNode(p, riverCard);
@@ -71,38 +75,46 @@ static void HandleTurnAllIn(ChanceNodeChildList& list, ChanceNode& p, Solver* g)
 	}
 }
 
-static void HandleRiverAllIn(ChanceNodeChildList& list, ChanceNode& p, Solver* g) {
+void Solver::ChanceNode::HandleRiverAllIn(ChanceNodeChildList& list, const ChanceNode& p, Solver* g)  {
 	list.push_back(ChanceNodeChild(1.0));
 }
 
-static void HandleTurnDraw(ChanceNodeChildList& list, ChanceNode& p, Solver* g) {
-	Solver::Board* turnCards = g->GetDrawCards(p.mHoleCardsOOP, p.mHoleCardsIP, Utils::NO_CARD);
-	float uniformProb = p.DrawUniformProb(turnCards);
+void Solver::ChanceNode::HandleTurnDraw(ChanceNodeChildList& list, const ChanceNode& p, Solver* solver)
+{
+	std::string hole_cards_oop = p.mHoleCardsOOP;
+	std::string hole_cards_ip = p.mHoleCardsIP;
+	Solver::Board* turnCards = solver->GetDrawCards(hole_cards_oop, hole_cards_ip, Utils::NO_CARD);
+	float uniformProb = ChanceNode::DrawUniformProb(turnCards);
 	for (int iCard = 0; iCard < turnCards->size(); iCard += 2) {
 		std::string turnCard = turnCards->substr(iCard, 2);
 		PlayerNode dealtTurnCard(
 			Solver::OOP, p.mPot, 0.0, turnCard,
-			p.mHoleCardsOOP, p.mHoleCardsIP, (uint8_t) 0
+			hole_cards_oop, hole_cards_ip, static_cast<uint8_t>(0)
 		);
 		list.push_back(ChanceNodeChild(dealtTurnCard, uniformProb));
 	}
 }
 
-static void HandleRiverDraw(ChanceNodeChildList& list, ChanceNode& p, Solver* g) {
-	Solver::Board* riverCards = g->GetDrawCards(p.mHoleCardsOOP, p.mHoleCardsIP, p.mPrevTurnCard);
-	float uniformProb = p.DrawUniformProb(riverCards);
+void Solver::ChanceNode::HandleRiverDraw(ChanceNodeChildList& list, const ChanceNode& p, Solver* g) {
+	std::string hole_cards_oop = p.mHoleCardsOOP;
+	std::string hole_cards_ip = p.mHoleCardsIP;
+	std::string prev_turn_card = p.mPrevTurnCard;
+	Solver::Board* riverCards = g->GetDrawCards(hole_cards_oop, hole_cards_ip, prev_turn_card);
+	float uniformProb = ChanceNode::DrawUniformProb(riverCards);
 	for (int iCard = 0; iCard < riverCards->size(); iCard += 2) {
 		std::string riverCard = riverCards->substr(iCard, 2);
-		Solver::Board newBoard = p.mPrevTurnCard + riverCard;
+		Solver::Board newBoard = prev_turn_card + riverCard;
+
 		PlayerNode dealtRiverCard(
 			Solver::OOP, p.mPot, 0.0, newBoard,
-			p.mHoleCardsOOP, p.mHoleCardsIP, (uint8_t) 0
+			hole_cards_oop, hole_cards_ip, (uint8_t) 0
 		);
 		list.push_back(ChanceNodeChild(dealtRiverCard, uniformProb));
 	}
 }
 
-ChanceNodeChildList Solver::ChanceNode::Children(Solver* staticInfo) {
+
+ChanceNodeChildList Solver::ChanceNode::Children(Solver* staticInfo) const {
 
 	
 	ChanceNodeChildList allChildren;
@@ -115,7 +127,7 @@ ChanceNodeChildList Solver::ChanceNode::Children(Solver* staticInfo) {
 	else if (this->IsAllIn() && this->mPrevTurnCard.empty()) {
 		HandleFlopAllIn(allChildren, *this, staticInfo);
 	}
-	else if (this->IsAllIn() && (this->mPrevTurnCard.size() == 2 && !this->mPrevRiverCard.size() == 2)) {
+	else if (this->IsAllIn() && (this->mPrevTurnCard.size() == 2 && this->mPrevRiverCard.size() != 2)) {
 		HandleTurnAllIn(allChildren, *this, staticInfo);
 	}
 	else if (this->IsAllIn() && this->mPrevTurnCard.size() == 2 && this->mPrevRiverCard.size() == 2) {
